@@ -10,6 +10,9 @@
 'use strict';
 
 var HTMLtoJSX = require('./htmltojsx');
+var React = require('react');
+var ReactDOM = require('react-dom');
+var ReactTools = require('react-tools');
 
 var converter;
 
@@ -62,7 +65,7 @@ function load(url, rawData, callback) {
 function reactComponentFromHTML(html) {
   var jsx = '/** @jsx React.DOM */ ' + converter.convert(html);
   try {
-    return JSXTransformer.exec(jsx);
+    return eval(ReactTools.transformWithDetails(jsx, {}).code);
   } catch (ex) {
     throw new Error('Something bad happened when transforming HTML to JSX: ' + ex);
     console.log(jsx);
@@ -80,7 +83,9 @@ function reactComponentFromHTML(html) {
  */
 function render(html) {
   var processed = reactComponentFromHTML(html);
-  React.render(processed, document.body);
+  ReactDOM.render(processed, document.body, function() {
+      jQuery(document).trigger('react:render');
+  });
 }
 
 /**
@@ -110,7 +115,12 @@ function handleClick(event) {
  */
 function handleSubmit(event) {
   var formValues = serialiseForm(event.target);
-  history.pushState({ formValues: formValues }, null, event.target.action);
+  var stateFn = (event.target.action == window.location) ? 'replaceState' : 'pushState';
+  try {
+      history[stateFn]({ formValues: formValues }, null, event.target.action);
+  } catch(e) {
+      return;
+  }
   handleStateChange();
   event.preventDefault();
 }
@@ -149,10 +159,11 @@ function loadComplete(content, xhr) {
   }
 
   var body = getTagContent(content, 'body');
+  var bodyClass = getBodyClass(content);
   var title = getTagContent(content, 'title');
   document.title = title;
   render(body);
-  document.body.classList.remove('react-loading');
+  document.body.setAttribute('class', bodyClass);
 }
 
 /**
@@ -164,14 +175,20 @@ function loadComplete(content, xhr) {
  */
 function serialiseForm(form) {
   var values = {};
+  var i;
   var inputs = form.getElementsByTagName('input');
-  for (var i = 0, count = inputs.length; i < count; i++) {
+  var selects = form.getElementsByTagName('select');
+  for (i = 0; i < inputs.length; i++) {
     var input = inputs[i];
     // Ignore unselected checkboxes or radio buttons
     if ((input.type === 'checkbox' || input.type === 'radio') && !input.checked) {
       continue;
     }
-    values[inputs[i].name] = inputs[i].value;
+    values[input.name] = input.value;
+  }
+  for (i = 0; i < selects.length; i++) {
+    var select = selects[i];
+    values[select.name] = select.value;
   }
   return values;
 }
@@ -192,6 +209,19 @@ function getTagContent(content, tag) {
 
   var tagContent = content.slice(tagStartPos2 + 1, tagEndPos);
   return tagContent;
+}
+
+function getBodyClass(content) {
+    var tagStart = '<body';
+    var tagStartPos = content.indexOf(tagStart);
+    var tagStartPos2 = content.indexOf('>', tagStartPos);
+    var tagInner = content.slice(tagStartPos, tagStartPos2);
+    var classAttrPos = tagInner.indexOf(' class="');
+    if (classAttrPos == -1) {
+        return "";
+    }
+    var classAttrPos2 = tagInner.indexOf('"', classAttrPos + 8);
+    return tagInner.slice(classAttrPos + 8, classAttrPos2);
 }
 
 /**

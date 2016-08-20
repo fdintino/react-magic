@@ -43,6 +43,14 @@ gulp.task('build-htmltojsx', function() {
           'process.env.NODE_ENV': '"production"'
         }),
       ],
+      loaders: [
+        { test: require.resolve("react"), loader: "expose?React" },
+      ],
+      module: {
+        loaders: [
+          { test: require.resolve("react"), loader: "expose?React" },
+        ],
+      },
     }))
     .pipe(gulp.dest(SITE_OUTPUT_DIR))
     .pipe(uglify({ preserveComments: 'some' }))
@@ -65,6 +73,16 @@ gulp.task('build-magic', function() {
           'process.env.NODE_ENV': '"production"'
         }),
       ],
+      loaders: [
+        { test: require.resolve("react"), loader: "expose?React" },
+        { test: require.resolve("react-dom"), loader: "expose?ReactDOM" },
+      ],
+      module: {
+        loaders: [
+          { test: require.resolve("react"), loader: "expose?React" },
+          { test: require.resolve("react-dom"), loader: "expose?ReactDOM" },
+        ],
+      },
     }))
     .pipe(gulp.dest(SITE_OUTPUT_DIR))
     .pipe(uglify({ preserveComments: 'some' }))

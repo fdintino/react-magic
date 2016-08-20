@@ -35,6 +35,74 @@ var ELEMENT_ATTRIBUTE_MAPPING = {
   }
 };
 
+var BOOLEAN_ATTRIBUTES = {
+    "allowfullscreen": 1,
+    "allowusermedia": 1,
+    "async": 1,
+    "autofocus": 1,
+    "autoplay": 1,
+    "badinput": 1,
+    "checked": 1,
+    "closed": 1,
+    "compact": 1,
+    "complete": 1,
+    "controls": 1,
+    "cookieenabled": 1,
+    "customerror": 1,
+    "declare": 1,
+    "default": 1,
+    "defaultchecked": 1,
+    "defaultmuted": 1,
+    "defaultselected": 1,
+    "defer": 1,
+    "disabled": 1,
+    "draggable": 1,
+    "enabled": 1,
+    "ended": 1,
+    "formnovalidate": 1,
+    "hidden": 1,
+    "imagesmoothingenabled": 1,
+    "indeterminate": 1,
+    "iscontenteditable": 1,
+    "ismap": 1,
+    "loop": 1,
+    "multiple": 1,
+    "muted": 1,
+    "nohref": 1,
+    "noresize": 1,
+    "noshade": 1,
+    "novalidate": 1,
+    "nowrap": 1,
+    "online": 1,
+    "open": 1,
+    "patternmismatch": 1,
+    "pauseonexit": 1,
+    "paused": 1,
+    "persisted": 1,
+    "playsinline": 1,
+    "rangeoverflow": 1,
+    "rangeunderflow": 1,
+    "readonly": 1,
+    "required": 1,
+    "reversed": 1,
+    "seeking": 1,
+    "selected": 1,
+    "spellcheck": 1,
+    "stepmismatch": 1,
+    "toolong": 1,
+    "tooshort": 1,
+    "translate": 1,
+    "truespeed": 1,
+    "typemismatch": 1,
+    "typemustmatch": 1,
+    "valid": 1,
+    "valuemissing": 1,
+    "visible": 1,
+    "wasclean": 1,
+    "willvalidate": 1,
+    "withcredentials": 1
+};
+
 var HTMLDOMPropertyConfig = require('react/lib/HTMLDOMPropertyConfig');
 
 // Populate property map with ReactJS's attribute and property mappings
@@ -204,6 +272,10 @@ HTMLtoJSX.prototype = {
       } else {
         this.output = 'React.createClass({\n';
       }
+      this.output += this.config.indent + 'componentDidMount: function() {' + "\n";
+      this.output += this.config.indent + this.config.indent + 'var $this = $(ReactDOM.findDOMNode(this));\n';
+      this.output += this.config.indent + this.config.indent + 'jQuery(document).trigger("react:render", [jQuery($this)]);\n';
+      this.output += this.config.indent + ",\n";
       this.output += this.config.indent + 'render: function() {' + "\n";
       this.output += this.config.indent + this.config.indent + 'return (\n';
     }
@@ -491,7 +563,7 @@ HTMLtoJSX.prototype = {
         // Numeric values should be output as {123} not "123"
         if (isNumeric(attribute.value)) {
           result += '={' + attribute.value + '}';
-        } else if (attribute.value.length > 0) {
+        } else if (attribute.value.length > 0 || !BOOLEAN_ATTRIBUTES[attribute.name.toLowerCase()]) {
           result += '="' + attribute.value.replace(/"/gm, '&quot;') + '"';
         }
         return result;
